@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>TranscriptAI</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>TranscriptAI</h1>
+    <p class="subtitle">Whisper transcription — runs in your browser, no uploads</p>
+  </header>
+
+  <main>
+    <!-- Model status bar -->
+    <div class="model-status-bar" id="model-status" data-state="loading">
+      <span class="model-dot"></span>
+      <span id="model-status-text">Initialising…</span>
+    </div>
+
+    <!-- Download progress (only on first visit) -->
+    <div class="download-bar hidden" id="download-bar">
+      <div class="download-fill" id="download-fill"></div>
+      <span class="download-pct" id="download-pct">0%</span>
+    </div>
+
+    <!-- Upload form -->
+    <section class="card" id="upload-section">
+      <h2>Transcribe Audio</h2>
+      <form id="upload-form">
+        <div class="file-drop" id="file-drop">
+          <input type="file" id="file-input" accept="audio/*,video/*,.m4a,.mp3,.wav,.mp4,.ogg,.flac,.webm" hidden>
+          <button type="button" class="file-btn" id="file-btn">Choose Audio File</button>
+          <p id="file-name" class="file-name">No file selected</p>
+          <p class="file-hint">m4a, mp3, wav, mp4, ogg, flac, webm</p>
+        </div>
+
+        <label for="model-select" class="label">Model</label>
+        <select id="model-select">
+          <option value="Xenova/whisper-tiny.en" selected>tiny (English) — fastest, ~75 MB download</option>
+          <option value="Xenova/whisper-base">base (multilingual) — balanced, ~145 MB download</option>
+        </select>
+
+        <button type="submit" class="btn-primary" id="submit-btn" disabled>Transcribe</button>
+      </form>
+    </section>
+
+    <!-- Progress while transcribing -->
+    <section class="card hidden" id="progress-section">
+      <div class="progress-header">
+        <div class="spinner"></div>
+        <p id="progress-status">Working…</p>
+      </div>
+    </section>
+
+    <!-- Result -->
+    <section class="card hidden" id="result-section">
+      <div class="result-header">
+        <h2>Transcript</h2>
+      </div>
+      <div id="transcript-text" class="transcript-text"></div>
+      <div class="result-actions">
+        <button class="btn-primary" id="copy-btn">Copy to Clipboard</button>
+        <button class="btn-secondary" id="new-btn">New Transcription</button>
+      </div>
+      <p class="copy-toast hidden" id="copy-toast">Copied!</p>
+    </section>
+
+    <!-- Error -->
+    <section class="card card-error hidden" id="error-section">
+      <h2>Something went wrong</h2>
+      <p id="error-message"></p>
+      <button class="btn-secondary" id="error-retry-btn">Try Again</button>
+    </section>
+
+    <p class="privacy-note">Audio is processed entirely in your browser. Nothing is uploaded to any server.</p>
+  </main>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
