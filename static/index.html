@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>TranscriptAI</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header>
+    <h1>TranscriptAI</h1>
+    <p class="subtitle">Local Whisper transcription</p>
+  </header>
+
+  <main>
+    <!-- Upload form -->
+    <section class="card" id="upload-section">
+      <h2>Transcribe Audio</h2>
+      <form id="upload-form">
+        <div class="file-drop" id="file-drop">
+          <input type="file" id="file-input" accept="audio/*,video/*,.m4a,.mp3,.wav,.mp4,.ogg,.flac,.webm" hidden>
+          <button type="button" class="file-btn" id="file-btn">Choose Audio File</button>
+          <p id="file-name" class="file-name">No file selected</p>
+        </div>
+
+        <label for="model-select" class="label">Model</label>
+        <select id="model-select" name="model">
+          <option value="base" selected>base — balanced speed &amp; accuracy (~150 MB)</option>
+          <option value="tiny">tiny — fastest, lower accuracy (~75 MB)</option>
+          <option value="small">small — better accuracy, slower (~500 MB)</option>
+          <option value="medium">medium — best accuracy, slowest (~1.5 GB)</option>
+        </select>
+
+        <button type="submit" class="btn-primary" id="submit-btn" disabled>Transcribe</button>
+      </form>
+    </section>
+
+    <!-- Active job progress -->
+    <section class="card hidden" id="progress-section">
+      <div class="progress-header">
+        <div class="spinner"></div>
+        <div>
+          <p id="progress-filename" class="progress-filename"></p>
+          <p id="progress-model" class="progress-model"></p>
+        </div>
+      </div>
+      <p class="progress-status">Transcribing… <span id="elapsed-timer">0s</span></p>
+    </section>
+
+    <!-- Transcript result -->
+    <section class="card hidden" id="result-section">
+      <div class="result-header">
+        <h2>Transcript</h2>
+        <div class="result-meta">
+          <span id="result-filename"></span>
+          <span id="result-duration"></span>
+        </div>
+      </div>
+      <div id="transcript-text" class="transcript-text"></div>
+      <div class="result-actions">
+        <button class="btn-primary" id="copy-btn">Copy to Clipboard</button>
+        <button class="btn-secondary" id="new-btn">New Transcription</button>
+      </div>
+      <p class="copy-toast hidden" id="copy-toast">Copied!</p>
+    </section>
+
+    <!-- Error state -->
+    <section class="card card-error hidden" id="error-section">
+      <h2>Transcription Failed</h2>
+      <p id="error-message"></p>
+      <button class="btn-secondary" id="error-retry-btn">Try Again</button>
+    </section>
+
+    <!-- History -->
+    <section class="card" id="history-section">
+      <button class="history-toggle" id="history-toggle" aria-expanded="false">
+        <span>History</span>
+        <span class="history-count badge hidden" id="history-count"></span>
+        <span class="chevron">▾</span>
+      </button>
+      <div class="history-list hidden" id="history-list">
+        <p class="empty-history" id="empty-history">No transcriptions yet this session.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
