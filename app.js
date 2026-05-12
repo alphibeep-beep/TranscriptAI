@@ -130,7 +130,8 @@ $('upload-form').addEventListener('submit', async (e) => {
   }
 
   progressStatus.textContent = 'Transcribing…';
-  worker.postMessage({ type: 'transcribe', audio }, [audio.buffer]);
+  // Don't transfer — copy instead. Transferring can leave a neutered buffer in Safari.
+  worker.postMessage({ type: 'transcribe', audio: audio.slice() });
 });
 
 async function decodeAudio(file) {
