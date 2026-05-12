@@ -61,15 +61,13 @@ self.onmessage = async (e) => {
     self.postMessage({ type: 'transcribing' });
 
     try {
+      const float32 = audio instanceof Float32Array ? audio : new Float32Array(audio);
       const result = await transcriber(
-        { data: audio, sampling_rate: 16000 },
-        {
-          chunk_length_s: 30,
-          stride_length_s: 5,
-          return_timestamps: false,
-        }
+        { data: float32, sampling_rate: 16000 },
+        { return_timestamps: false }
       );
-      self.postMessage({ type: 'result', text: result.text.trim() });
+      const text = (result.text || '').trim();
+      self.postMessage({ type: 'result', text: text || '(no speech detected)' });
     } catch (err) {
       self.postMessage({ type: 'error', message: `Transcription failed: ${err.message}` });
     }
