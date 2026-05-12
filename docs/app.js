@@ -135,11 +135,26 @@ $('upload-form').addEventListener('submit', async (e) => {
 
 async function decodeAudio(file) {
   const arrayBuffer = await file.arrayBuffer();
-  const ctx = new AudioContext({ sampleRate: 16000 });
+
+  // Decode at native sample rate (Safari ignores the sampleRate constructor option)
+  const ctx = new AudioContext();
   const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-  const raw = audioBuffer.getChannelData(0);
-  // Copy so the buffer can be transferred to the worker
-  return new Float32Array(raw);
+  await ctx.close();
+
+  const TARGET_SR = 16000;
+  if (audioBuffer.sampleRate === TARGET_SR) {
+    return new Float32Array(audioBuffer.getChannelData(0));
+  }
+
+  // Resample to 16 kHz using OfflineAudioContext
+  const numFrames = Math.round(audioBuffer.duration * TARGET_SR);
+  const offlineCtx = new OfflineAudioContext(1, numFrames, TARGET_SR);
+  const source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineCtx.destination);
+  source.start(0);
+  const resampled = await offlineCtx.startRendering();
+  return new Float32Array(resampled.getChannelData(0));
 }
 
 // ── Result / error display ────────────────────────────────────────────────────
