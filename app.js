@@ -2,11 +2,13 @@
 
 const $ = (id) => document.getElementById(id);
 
+// ── State ─────────────────────────────────────────────────────────────────────
 let worker = null;
 let modelReady = false;
 let selectedFile = null;
 let currentModel = 'Xenova/whisper-tiny.en';
 
+// ── DOM refs ──────────────────────────────────────────────────────────────────
 const modelStatus     = $('model-status');
 const modelStatusText = $('model-status-text');
 const downloadBar     = $('download-bar');
@@ -33,6 +35,7 @@ const errorSection = $('error-section');
 const errorMessage = $('error-message');
 const errorRetry   = $('error-retry-btn');
 
+// ── Worker setup ──────────────────────────────────────────────────────────────
 function initWorker(model) {
   if (worker) worker.terminate();
   modelReady = false;
@@ -53,23 +56,29 @@ function handleWorkerMessage(e) {
 
   if (type === 'loading') {
     setModelStatus('loading', 'Downloading model… (first visit only)');
+
   } else if (type === 'download_progress') {
     downloadFill.style.width = `${pct}%`;
     downloadPct.textContent = `${pct}%`;
+
   } else if (type === 'ready') {
     modelReady = true;
     showDownloadBar(false);
     setModelStatus('ready', 'Model ready');
     if (selectedFile) submitBtn.disabled = false;
+
   } else if (type === 'transcribing') {
     progressStatus.textContent = 'Transcribing…';
+
   } else if (type === 'result') {
     showResult(text);
+
   } else if (type === 'error') {
     showError(message);
   }
 }
 
+// ── File selection ────────────────────────────────────────────────────────────
 fileBtn.addEventListener('click', () => fileInput.click());
 
 fileInput.addEventListener('change', () => {
@@ -93,11 +102,15 @@ function selectFile(file) {
   submitBtn.disabled = !modelReady;
 }
 
+// ── Model switching ───────────────────────────────────────────────────────────
 modelSelect.addEventListener('change', () => {
   const chosen = modelSelect.value;
-  if (chosen !== currentModel) initWorker(chosen);
+  if (chosen !== currentModel) {
+    initWorker(chosen);
+  }
 });
 
+// ── Transcribe ────────────────────────────────────────────────────────────────
 $('upload-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!selectedFile || !modelReady) return;
@@ -122,12 +135,29 @@ $('upload-form').addEventListener('submit', async (e) => {
 
 async function decodeAudio(file) {
   const arrayBuffer = await file.arrayBuffer();
-  const ctx = new AudioContext({ sampleRate: 16000 });
+
+  // Decode at native sample rate (Safari ignores the sampleRate constructor option)
+  const ctx = new AudioContext();
   const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-  const raw = audioBuffer.getChannelData(0);
-  return new Float32Array(raw);
+  await ctx.close();
+
+  const TARGET_SR = 16000;
+  if (audioBuffer.sampleRate === TARGET_SR) {
+    return new Float32Array(audioBuffer.getChannelData(0));
+  }
+
+  // Resample to 16 kHz using OfflineAudioContext
+  const numFrames = Math.round(audioBuffer.duration * TARGET_SR);
+  const offlineCtx = new OfflineAudioContext(1, numFrames, TARGET_SR);
+  const source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineCtx.destination);
+  source.start(0);
+  const resampled = await offlineCtx.startRendering();
+  return new Float32Array(resampled.getChannelData(0));
 }
 
+// ── Result / error display ────────────────────────────────────────────────────
 function showResult(text) {
   hide(progressSection);
   hide(errorSection);
@@ -157,12 +187,14 @@ function resetForm() {
   submitBtn.disabled = true;
 }
 
+// ── Copy to clipboard ─────────────────────────────────────────────────────────
 copyBtn.addEventListener('click', async () => {
   const text = transcriptText.textContent;
   try {
     await navigator.clipboard.writeText(text);
     flashCopied();
   } catch {
+    // Safari fallback
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
@@ -179,6 +211,7 @@ function flashCopied() {
   setTimeout(() => copyToast.classList.add('hidden'), 2000);
 }
 
+// ── UI helpers ────────────────────────────────────────────────────────────────
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
 
@@ -191,4 +224,5 @@ function showDownloadBar(visible) {
   downloadBar.classList.toggle('hidden', !visible);
 }
 
+// ── Init ──────────────────────────────────────────────────────────────────────
 initWorker(currentModel);
